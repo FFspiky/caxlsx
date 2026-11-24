@@ -1,0 +1,26 @@
+name: Read back chart legends with LibreOffice
+on:
+  push:
+    branches: [ci/series-title-readback]
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the spreadsheet reader
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libreoffice-calc poppler-utils
+      - name: Export both workbooks and inspect the printed legends
+        run: |
+          mkdir rendered
+          libreoffice --version
+          libreoffice --headless --convert-to pdf --outdir rendered base.xlsx corrected.xlsx
+          for variant in base corrected; do
+            pdftotext -layout "rendered/$variant.pdf" "rendered/$variant.txt"
+            echo "$variant"
+            cat "rendered/$variant.txt"
+          done
+          python3 check.py
